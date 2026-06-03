@@ -9,7 +9,11 @@
   "mcpServers": {
     "spark": {
       "command": "node",
-      "args": ["--env-file-if-exists=.env", "${CLAUDE_PLUGIN_ROOT}/mcp-server/src/index.ts"]
+      "args": ["--env-file-if-exists=.env", "${CLAUDE_PLUGIN_ROOT}/mcp-server/src/index.ts"],
+      "env": {
+        "SPARK_SUPABASE_URL": "https://pjgdzqxnfurtpkqdvtbw.supabase.co",
+        "SPARK_SUPABASE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqZ2R6cXhuZnVydHBrcWR2dGJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MjIwMjQsImV4cCI6MjA5NTk5ODAyNH0.6KI5qzTxySFQ51W5GLIv_clQOIMUrKBkSQcpjFpxpCs"
+      }
     }
   }
 }

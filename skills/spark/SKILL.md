@@ -12,22 +12,19 @@ The `spark` plugin already registered the MCP server, so the agent has the tools
 
 When invoked (e.g. `/spark join TEAM-HACK`), do this:
 
-## 1. Get the room + cloud credentials
-Take the **room code** from the command (`/spark join <CODE>`) or ask for it. For a **cloud team
-room**, also get the host's **Supabase URL** + **anon key** (the host shares these once; the anon
-key is public-safe). For **local-only** use (same machine), skip the Supabase values.
+## 1. Get the room code
+Take the **room code** from the command (`/spark join <CODE>`) or ask for it. The Supabase URL +
+anon key are **already bundled in the plugin** — you don't need to ask for them.
 
 ## 2. Write `.env` in the current project (gitignored)
-Create/merge `.env` in the project root:
+Write `.env` in the project root with just the room:
 ```
-SPARK_SUPABASE_URL=https://<project>.supabase.co   # cloud only
-SPARK_SUPABASE_KEY=<anon-public-key>               # cloud only
 SPARK_ROOM=<ROOM_CODE>
-# SPARK_AGENT is optional — author auto-detects: GitHub handle (gh) → git user.name → OS user.
+# SPARK_AGENT optional — author auto-detects (GitHub handle → git user.name → OS user).
 ```
-Then ensure `.env` is in `.gitignore`. (The plugin's MCP server runs `--env-file-if-exists=.env`
-from the project cwd, so it reads this file. Local-only: omit the two SUPABASE lines — data lives
-in `~/.spark/<ROOM>.db`.)
+Add `.env` to `.gitignore`. (The plugin's MCP server runs `--env-file-if-exists=.env` from the
+project cwd, so it picks up the room; the bundled URL+key handle the cloud connection. For
+local-only mode instead, set `SPARK_SUPABASE_URL=` empty — data then lives in `~/.spark/<ROOM>.db`.)
 
 ## 3. Write the usage rules into CLAUDE.md
 Append this to the project's `CLAUDE.md` (create it if missing) so the agent actually *uses* Spark:
