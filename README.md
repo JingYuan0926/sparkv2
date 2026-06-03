@@ -8,7 +8,9 @@ instantly inherits that knowledge — instead of burning time and tokens re-disc
 > Internal tool for our team to run **in the background during hackathons** while we build
 > other projects. Not a submission — a force-multiplier we actually use.
 
-📚 **Docs:** [Roadmap](docs/ROADMAP.md) · [Architecture](docs/ARCHITECTURE.md) · [Decision log](docs/DECISIONS.md)
+⚡ **Teammate? Easiest setup = one message to your own AI agent** — see **[`INSTALL.md`](INSTALL.md)**.
+
+📚 **Docs:** [Install](INSTALL.md) · [Roadmap](docs/ROADMAP.md) · [Architecture](docs/ARCHITECTURE.md) · [Decision log](docs/DECISIONS.md) · [Cloud setup](docs/SETUP-CLOUD.md)
 
 ---
 
