@@ -9,7 +9,7 @@ Paste this to your AI coding agent (Claude Code, etc.), filling in the **3 value
 shared** (room code + Supabase URL + anon key):
 
 > Set up Spark (shared team knowledge) for me by following the INSTALL.md in
-> https://github.com/JingYuan0926/spark — then tell me to restart.
+> https://github.com/JingYuan0926/sparkv2 — then tell me to restart.
 > SPARK_ROOM = <room code, e.g. SPARK-TEAM>
 > SPARK_SUPABASE_URL = <https://xxxx.supabase.co>
 > SPARK_SUPABASE_KEY = <anon public key>
@@ -26,7 +26,7 @@ You've been asked to set up Spark. Steps (no `npm install`, no build — Node 22
 
 2. **Get the engine once:**
    ```
-   git clone https://github.com/JingYuan0926/spark "$HOME/.spark/app" 2>/dev/null \
+   git clone https://github.com/JingYuan0926/sparkv2 "$HOME/.spark/app" 2>/dev/null \
      || git -C "$HOME/.spark/app" pull --ff-only
    ```
 
@@ -57,5 +57,5 @@ in `problem` and keyword search for reliable hits.
 ---
 
 > Alternative (manual): install the Claude Code **plugin** instead —
-> `/plugin marketplace add JingYuan0926/spark` then `/plugin install spark@spark-marketplace`,
+> `/plugin marketplace add JingYuan0926/sparkv2` then `/plugin install spark@spark-marketplace`,
 > then create the `.env` above and restart. See `docs/SETUP-CLOUD.md`.

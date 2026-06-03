@@ -145,7 +145,7 @@ clone), and everyone joins a **room**. All you ever configure is a small `.env`.
 
 ### 2. Teammates — install the plugin (~1 min each, no clone)
 ```
-/plugin marketplace add JingYuan0926/spark-mcp
+/plugin marketplace add JingYuan0926/sparkv2
 /plugin install spark@spark-marketplace
 ```
 Create a **`.env`** in your project, then **restart Claude Code**:
