@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spark ⚡ — shared agent knowledge</title>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --line:#262b36; --fg:#e6e9ef; --mut:#8b93a7; --acc:#ffb454; --ok:#5bd97f; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:16px 20px; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  h1 { font-size:18px; margin:0 12px 0 0; }
+  input, textarea, button { font:inherit; color:var(--fg); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+  button { background:var(--acc); color:#181818; border:none; font-weight:600; cursor:pointer; }
+  button.ghost { background:var(--card); color:var(--fg); border:1px solid var(--line); }
+  main { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:16px 20px; max-width:1100px; }
+  @media (max-width:800px){ main{ grid-template-columns:1fr; } }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .panel h2 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); margin:0 0 10px; }
+  .card { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:10px; }
+  .card .meta { color:var(--mut); font-size:12px; margin-bottom:4px; }
+  .tag { display:inline-block; background:#222735; color:var(--mut); border-radius:6px; padding:1px 6px; margin-right:4px; font-size:11px; }
+  .verified { color:var(--ok); }
+  .row { display:flex; gap:8px; margin-bottom:8px; }
+  .row input { flex:1; }
+  textarea { width:100%; min-height:60px; resize:vertical; }
+  .sec { margin-bottom:10px; }
+  .sec b { color:var(--acc); text-transform:uppercase; font-size:11px; letter-spacing:.05em; }
+  .muted { color:var(--mut); }
+  #err { color:#ff6b6b; padding:0 20px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Spark ⚡</h1>
+  <input id="room" placeholder="room code" value="SPARK-DEMO" size="12" />
+  <input id="token" placeholder="token (= room code)" size="14" />
+  <button id="join">Join</button>
+  <span id="status" class="muted"></span>
+</header>
+<div id="err"></div>
+<main>
+  <section class="panel">
+    <h2>Living context</h2>
+    <div id="context" class="muted">Join a room to load context…</div>
+  </section>
+
+  <section class="panel">
+    <h2>Solutions</h2>
+    <div class="row">
+      <input id="q" placeholder="search problems…" />
+      <button class="ghost" id="searchBtn">Search</button>
+    </div>
+    <div id="cards" class="muted">—</div>
+    <h2 style="margin-top:16px">Record a solved problem</h2>
+    <div class="sec"><textarea id="problem" placeholder="problem (include the error text)"></textarea></div>
+    <div class="sec"><textarea id="solution" placeholder="what actually fixed it"></textarea></div>
+    <div class="row"><input id="tags" placeholder="tags, comma,separated" /><button id="recordBtn">Record</button></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+function api(){ return location.origin; }
+function room(){ return $('room').value.trim(); }
+function token(){ return $('token').value.trim() || room(); }
+function err(m){ $('err').textContent = m || ''; }
+
+async function call(path, body){
+  const r = await fetch(api()+path, {
+    method:'POST',
+    headers:{ 'content-type':'application/json', 'authorization':'Bearer '+token() },
+    body: JSON.stringify({ room: room(), ...body }),
+  });
+  const data = await r.json().catch(()=>({error:r.statusText}));
+  if(!r.ok) throw new Error(data.error||('HTTP '+r.status));
+  return data;
+}
+
+async function join(){
+  err('');
+  try {
+    await call('/join', {});
+    $('status').textContent = 'joined '+room()+' as '+(token()===room()?'(code)':'(token)');
+    await loadContext(); await search();
+  } catch(e){ err('join failed: '+e.message); }
+}
+
+async function loadContext(){
+  const { context } = await call('/context/get', {});
+  const order = ['goal','stack','decisions','status','map'];
+  $('context').innerHTML = order.map(s =>
+    `<div class="sec"><b>${s}</b><div>${(context[s]&&context[s].content)? esc(context[s].content) : '<span class=muted>(empty)</span>'}</div></div>`
+  ).join('');
+}
+
+async function search(){
+  err('');
+  try {
+    const { results } = await call('/search', { query: $('q').value.trim(), limit: 20 });
+    $('cards').innerHTML = results.length ? results.map(cardHtml).join('') : '<span class=muted>no matches</span>';
+  } catch(e){ err('search failed: '+e.message); }
+}
+
+function cardHtml(c){
+  return `<div class="card">
+    <div class="meta">#${c.id} · <span class="${c.status==='verified'?'verified':''}">${c.status}${c.helped?(' · helped '+c.helped+'×'):''}</span> · ${esc(c.author||'')}</div>
+    <div><b>${esc(c.problem)}</b></div>
+    <div class="muted">${esc(c.solution)}</div>
+    <div style="margin-top:6px">${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}
+      <button class="ghost" style="float:right;padding:2px 8px" onclick="confirmCard(${c.id})">✓ helped</button></div>
+  </div>`;
+}
+
+async function confirmCard(id){ try { await call('/confirm', { id }); await search(); } catch(e){ err(e.message); } }
+
+async function record(){
+  err('');
+  const problem = $('problem').value.trim(), solution = $('solution').value.trim();
+  if(!problem || !solution){ err('problem and solution are required'); return; }
+  try {
+    await call('/record', { problem, solution, tags: $('tags').value.split(',').map(s=>s.trim()).filter(Boolean), author:'web' });
+    $('problem').value=''; $('solution').value=''; $('tags').value='';
+    await search();
+  } catch(e){ err('record failed: '+e.message); }
+}
+
+function esc(s){ return String(s).replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+$('join').onclick = join;
+$('searchBtn').onclick = search;
+$('recordBtn').onclick = record;
+$('q').addEventListener('keydown', e=>{ if(e.key==='Enter') search(); });
+</script>
+</body>
+</html>

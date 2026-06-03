@@ -1,0 +1,12 @@
+{
+  "name": "spark-marketplace",
+  "owner": { "name": "JingYuan" },
+  "description": "Spark — shared real-time context + Stack Overflow for AI coding agents.",
+  "plugins": [
+    {
+      "name": "spark",
+      "source": "./",
+      "description": "Shared knowledge for AI coding agents: search before you grind, record what you solve. Bundles the MCP server + join skill."
+    }
+  ]
+}

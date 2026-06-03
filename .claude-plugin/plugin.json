@@ -1,0 +1,15 @@
+{
+  "name": "spark",
+  "displayName": "Spark",
+  "version": "1.0.0",
+  "description": "Shared real-time context + Stack Overflow for AI coding agents — search before you grind, record what you solve.",
+  "author": { "name": "JingYuan" },
+  "license": "MIT",
+  "keywords": ["mcp", "knowledge", "shared-context", "agents", "hackathon"],
+  "mcpServers": {
+    "spark": {
+      "command": "node",
+      "args": ["--env-file-if-exists=.env", "${CLAUDE_PLUGIN_ROOT}/mcp-server/src/index.ts"]
+    }
+  }
+}

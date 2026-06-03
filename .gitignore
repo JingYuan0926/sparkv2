@@ -1,0 +1,17 @@
+# Spark runtime DBs (local store)
+spark.db
+spark.db-wal
+spark.db-shm
+*.db
+*.db-wal
+*.db-shm
+
+# Secrets (Supabase keys, etc.) — keep .env out of git; .env.example is the template
+.env
+.env.local
+
+# Node
+node_modules/
+
+# OS
+.DS_Store

@@ -1,0 +1,16 @@
+{
+  "name": "spark",
+  "version": "0.1.0",
+  "description": "Shared real-time context + Stack Overflow for AI coding agents",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node mcp-server/test/run-all.ts",
+    "server": "node server/src/server.ts",
+    "mcp": "node mcp-server/src/index.ts",
+    "spark": "node cli/spark.ts"
+  }
+}
