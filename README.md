@@ -158,6 +158,11 @@ SPARK_ROOM=TEAM-HACK
 for you. `SPARK_AGENT` is optional: your author is **auto-detected** (GitHub handle via `gh` →
 git `user.name` → OS user).
 
+The plugin also ships **hooks (auto-active, zero setup)**: session start auto-orients from the
+room, session end / pre-compact writes a status digest, and a **failing Bash command
+auto-searches the room** and injects a teammate's fix if one exists. In projects without a
+`SPARK_ROOM`, the hooks stay completely silent.
+
 ### 3. Host's own machine — register the server directly
 You have the repo, so register it once (it reads your `.env`), then restart:
 ```
@@ -190,7 +195,9 @@ Terminal B:  agent hits the same error → search_solutions("...") → gets the 
              → skips the grind, saving time + tokens
 ```
 
-The v2 continuity hooks make this automatic: open Claude Code and it's already caught up.
+The plugin's hooks make this automatic: opening Claude Code auto-orients from the room, and a
+failing Bash command auto-searches the room — a teammate's fix is injected at the exact moment
+you're stuck, without anyone asking for it.
 
 ---
 
@@ -206,11 +213,13 @@ The v2 continuity hooks make this automatic: open Claude Code and it's already c
 - *Agents call tools explicitly — no automation yet (keeps v1 simple)*
 - ✅ Useful immediately across your own terminals; validates the concept
 
-### v2 — Automation & Continuity ✅ *built + tested*
+### v2 — Automation & Continuity ✅ *built + shipped in the plugin*
 - `SessionStart` hook → **auto-orient** (injects context when you open/join)
-- `Stop` / `PreCompact` hook → **auto-summary** of the session into Status
+- `SessionEnd` / `PreCompact` hook → **auto-summary** of the session into Status
+- `PostToolUseFailure` hook → a **failing Bash command auto-searches the room** and injects a
+  teammate's fix (silent on success / no match — zero noise)
 - Agent-maintained **code map**
-- ✅ Closing / reopening / joining "just knows" — no manual calls
+- ✅ Hooks are bundled in the plugin (`hooks/hooks.json`) — installing it activates them
 
 ### v3 — Cloud + Team Join ✅ *LIVE on Supabase*
 - SQLite → **Postgres (Supabase)**, hosted API
@@ -238,9 +247,9 @@ The v2 continuity hooks make this automatic: open Claude Code and it's already c
 ## What's built vs next
 
 **Built (v1–v4):** local SQLite + **cloud Supabase** backends · 8 MCP tools · relevance search
-(keyword + semantic, thresholded — no false positives) · Living Context + continuity hooks · web
-dashboard · **Claude Code plugin** · GitHub/git identity auto-attribution. **81 tests, live on
-the cloud.**
+(keyword + semantic, thresholded — no false positives) · Living Context + **plugin-bundled hooks**
+(auto-orient, session digest, **search-on-failing-Bash**) · web dashboard · **Claude Code plugin**
+· GitHub/git identity auto-attribution. **118 tests, live on the cloud.**
 
 **Next (v5):** real embedding search · accounts / multi-team tenancy · "tokens & time saved"
 analytics · per-user auth — today the **room code is the shared secret** (fine for a private
@@ -250,7 +259,7 @@ team). See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Tech decisions
 
-- **Zero-dependency Node** (needs only **Node 22+**). No `npm install`, no build step:
+- **Zero-dependency Node** (needs only **Node 22.18+**). No `npm install`, no build step:
   TypeScript runs via Node's native type-stripping, storage uses built-in **`node:sqlite`**
   (FTS5), and the **MCP stdio protocol is hand-rolled** (no SDK). Install story = "have Node."
 - **Storage: SQLite locally, Supabase Postgres in the cloud** — same tool surface; the backend
@@ -274,8 +283,9 @@ spark/
     semantic.ts   # relevance ranking (query-coverage + dev-term synonyms)
     tools.ts      # the 8 MCP tool defs + handlers
     config.ts     # room/agent/backend resolution + identity auto-detect
-  mcp-server/test/*.test.ts   # 81 tests · run-all.ts
+  mcp-server/test/*.test.ts   # 118 tests · run-all.ts
   cli/spark.ts    # same store ops from the shell (hooks, scripts, non-MCP agents)
+  hooks/hooks.json             # plugin hooks: auto-orient, session digest, search-on-failure
   server/src/server.ts        # self-host HTTP API + web dashboard (GET /)
   web/index.html  # browser dashboard
   supabase/schema.sql         # cloud DB schema + token-gated functions
@@ -288,19 +298,23 @@ spark/
 
 ## Status
 
-🟢 **v1–v4 built, tested, and LIVE on the cloud.** Zero-dependency: **Node 22+ only** — no `npm install`.
-- **81 automated tests passing** (`npm test`): store, MCP protocol, hooks, multi-process
-  concurrency, self-hosted + **Supabase** paths, semantic + dashboard, simulation-driven fixes.
+🟢 **v1–v4 built, tested, and LIVE on the cloud.** Zero-dependency: **Node 22.18+ only** — no `npm install`.
+- **118 automated tests passing** (`npm test`): store, MCP protocol, hooks, multi-process
+  concurrency, self-hosted + **Supabase** paths, semantic + dashboard, simulation-driven fixes,
+  and the must-fix tier (real hook payload shapes, backend-override guards, digest preservation).
 - **Live in real Claude Code** — the `spark` MCP server connects and the 8 `mcp__spark__*` tools
   work end-to-end against a real **Supabase** database (verified by a full join→record→search→
   confirm→update→delete roundtrip).
+- **Hooks verified end-to-end in a live session** — a failing Bash command fired the plugin's
+  `PostToolUseFailure` hook and the model received a teammate's fix, unprompted.
 - **Shipped as a Claude Code plugin** — teammates `/plugin install spark@spark-marketplace`, no clone.
-- **Stress-tested by a 5-agent simulated hackathon**, then hardened against everything it found.
+- **Stress-tested by a 5-agent simulated hackathon**, then hardened against everything it found —
+  plus an adversarial multi-agent review of the hook layer (21 confirmed findings, all fixed).
 
 ### Run it
 
 ```bash
-npm test                          # 81 tests
+npm test                          # 118 tests
 npm run server                    # self-host API + dashboard → http://localhost:8787
 
 # talk to a room from the shell (add --env-file=.env for the cloud room)

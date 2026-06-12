@@ -10,18 +10,23 @@ export class SupabaseStore {
   private url: string;
   private key: string;
   private token: string;
+  private timeoutMs: number;
 
-  constructor(url: string, anonKey: string, token: string) {
+  constructor(url: string, anonKey: string, token: string, timeoutMs = 8000) {
     this.url = url.replace(/\/$/, '');
     this.key = anonKey;
     this.token = token;
+    this.timeoutMs = timeoutMs;
   }
 
   private async rpc(fn: string, args: any): Promise<any> {
+    // Bounded: a stalled connection (captive portal, flaky venue Wi-Fi) must fail fast,
+    // not hang hook processes for undici's multi-minute default.
     const r = await fetch(`${this.url}/rest/v1/rpc/${fn}`, {
       method: 'POST',
       headers: { apikey: this.key, authorization: `Bearer ${this.key}`, 'content-type': 'application/json' },
       body: JSON.stringify(args),
+      signal: AbortSignal.timeout(this.timeoutMs),
     });
     const data = await r.json().catch(() => null);
     if (!r.ok) throw new Error(data?.message || data?.error || `supabase ${r.status}`);
@@ -136,7 +141,9 @@ export class SupabaseStore {
   }
 
   async listRecent(room: string, limit = 10): Promise<Activity[]> {
-    const sols = await this.allCards(room);
+    // Sort cards newest-first locally before taking `limit` — don't rely on the RPC's
+    // ORDER BY surviving PostgREST serialization.
+    const sols = [...(await this.allCards(room))].sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
     const ctxRows = (await this.rpc('spark_get_context', { p_room: room, p_token: this.token })) || [];
     const acts: Activity[] = [
       ...sols.slice(0, limit).map((s) => ({ kind: 'solution' as const, ref: `#${s.id}`, summary: `[${s.status}] ${s.problem}`, at: s.updated_at })),

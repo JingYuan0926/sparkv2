@@ -41,9 +41,16 @@ export const TOOLS: ToolDef[] = [
     },
     handler: async (store, room, args) => {
       const limit = Number(args.limit) || 5;
+      // Models sometimes pass tags as a comma-separated string — accept it instead of throwing
+      // (a tool error teaches the agent to stop calling the tool).
+      const tags = Array.isArray(args.tags)
+        ? args.tags.map(String)
+        : typeof args.tags === 'string'
+          ? args.tags.split(',').map((s: string) => s.trim()).filter(Boolean)
+          : undefined;
       // Prefer smart (keyword + semantic) when available; RemoteStore routes through the server's smart search.
       const fn = store.searchSmart ? store.searchSmart.bind(store) : store.searchSolutions.bind(store);
-      return fmtCards(await fn(room, String(args.query || ''), args.tags, limit));
+      return fmtCards(await fn(room, String(args.query || ''), tags, limit));
     },
   },
   {
@@ -136,7 +143,19 @@ export const TOOLS: ToolDef[] = [
       const parts = SECTIONS.map(
         (s) => `## ${s.toUpperCase()}${ctx[s].updated_at ? `  (updated ${ctx[s].updated_at})` : ''}\n${ctx[s].content || '(empty)'}`,
       );
-      return `Living Context for room ${room}:\n\n` + parts.join('\n\n');
+      let warn = '';
+      if (SECTIONS.every((s) => !ctx[s].content)) {
+        // Join is create-on-first-use, so a typo'd room code silently makes a fresh empty
+        // room — surface that loudly instead of looking like "Spark has nothing".
+        const fn = store.searchSmart ? store.searchSmart.bind(store) : store.searchSolutions.bind(store);
+        const any = await fn(room, '', undefined, 1);
+        if (!any.length)
+          warn =
+            `\n\n⚠ This room is EMPTY (no context, no solution cards). If your team expected an existing room, ` +
+            `the room code (SPARK_ROOM in .env) may be mistyped — verify it before recording. ` +
+            `If the room is genuinely new, start by setting the goal via update_context.`;
+      }
+      return `Living Context for room ${room}:\n\n` + parts.join('\n\n') + warn;
     },
   },
   {

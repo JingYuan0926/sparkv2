@@ -6,7 +6,7 @@
     {
       "name": "spark",
       "source": "./",
-      "description": "Shared knowledge for AI coding agents: search before you grind, record what you solve. Bundles the MCP server + join skill."
+      "description": "Shared knowledge for AI coding agents: search before you grind, record what you solve. Bundles the MCP server, join skill + auto-hooks (orient on start, session digest, failing-command auto-search)."
     }
   ]
 }

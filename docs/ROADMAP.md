@@ -13,7 +13,7 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 locally across our own terminals, plus the Living Context doc. Useful immediately; validates
 the whole concept with zero infrastructure.
 
-> **Built zero-dependency** (better than planned): Node 22+ built-in `node:sqlite` (FTS5),
+> **Built zero-dependency** (better than planned): Node 22.18+ built-in `node:sqlite` (FTS5),
 > TypeScript run directly via type-stripping (no build), hand-rolled MCP stdio JSON-RPC.
 > No `npm install`, no native builds. Verified live inside real Claude Code.
 
@@ -46,10 +46,12 @@ the whole concept with zero infrastructure.
 
 **Deliverables**
 - [x] `SessionStart` hook → auto-inject current context doc + recent solutions (`spark orient`)
-- [x] `Stop` / `PreCompact` hook → session digest into `Status` (`spark summarize-hook`)
+- [x] `SessionEnd` / `PreCompact` hook → session digest into `Status` (`spark summarize-hook`)
+- [x] `PostToolUseFailure` hook → failing Bash auto-searches the room, injects a teammate's fix
 - [x] Agent-maintained **code map** section (key files + one-line purpose)
-- [x] Size-cap / roll-up logic so `Status` stays small (keeps recent digest lines)
-- [x] Skill installs the hooks (see `.claude/skills/spark/SKILL.md`)
+- [x] Size-cap / roll-up logic so `Status` stays small (keeps recent digest lines; manual notes
+      and markdown checklists survive below the digest block)
+- [x] Hooks ship **bundled in the plugin** (`hooks/hooks.json` — auto-active on install)
 
 **Acceptance criteria**
 - Open Claude Code in a joined room → context is present without any tool call.
@@ -75,7 +77,7 @@ the whole concept with zero infrastructure.
 - [x] `supabase/schema.sql` — tables + RLS + token-gated access functions
 - [x] Join by **room code** + per-room token; room isolation enforced (tested both paths)
 - [x] One-command **skill cloud-join** + `docs/SETUP-CLOUD.md`
-- [ ] Run `schema.sql` in a real Supabase project + verify E2E (needs your account)
+- [x] Run `schema.sql` in a real Supabase project + verify E2E (live)
 - [ ] (optional) move search ranking into Postgres for very large rooms
 
 **Acceptance criteria**

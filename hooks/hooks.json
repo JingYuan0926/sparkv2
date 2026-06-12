@@ -1,0 +1,50 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node --env-file-if-exists=.env \"${CLAUDE_PLUGIN_ROOT}/cli/spark.ts\" orient --from-hook 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node --env-file-if-exists=.env \"${CLAUDE_PLUGIN_ROOT}/cli/spark.ts\" summarize-hook --from-hook 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node --env-file-if-exists=.env \"${CLAUDE_PLUGIN_ROOT}/cli/spark.ts\" summarize-hook --from-hook 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node --env-file-if-exists=.env \"${CLAUDE_PLUGIN_ROOT}/cli/spark.ts\" posttooluse-hook --from-hook 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

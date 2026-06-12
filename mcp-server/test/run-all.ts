@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const SUITES = ['store', 'mcp-smoke', 'hooks', 'concurrent', 'remote', 'v4', 'fixes', 'supabase'];
+const SUITES = ['store', 'mcp-smoke', 'hooks', 'concurrent', 'remote', 'v4', 'fixes', 'supabase', 'must-fix'];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function run(suite: string): Promise<{ code: number; summary: string }> {

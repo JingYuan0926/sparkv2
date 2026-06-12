@@ -30,12 +30,12 @@ subprocess, and they coordinate purely through the shared SQLite file.
 
 ## Components
 
-| Component | v1 | Notes |
+| Component | Status | Notes |
 |---|---|---|
-| **MCP server** | `mcp-server/` (TypeScript, stdio) | Registers the 6 tools; reads `SPARK_ROOM` + `SPARK_DB` from env |
+| **MCP server** | `mcp-server/` (TypeScript, stdio) | Registers the 8 tools; reads `SPARK_ROOM` + `SPARK_DB` from env |
 | **Store** | local `spark.db` (SQLite) | WAL mode for safe multi-process access; FTS5 for search |
-| **Install skill** | `.claude/skills/spark/` | Build + register MCP in `.mcp.json` + set room code |
-| **Hooks** | — (v2) | `SessionStart` auto-orient, `Stop`/`PreCompact` auto-summary |
+| **Install skill** | `skills/spark/` (bundled in the plugin) | Writes `.env` (room) + CLAUDE.md usage rules |
+| **Hooks** | `hooks/hooks.json` (bundled in the plugin) | `SessionStart` auto-orient, `SessionEnd`/`PreCompact` auto-summary, `PostToolUseFailure` search-on-failing-Bash |
 
 ---
 
@@ -116,6 +116,16 @@ All tools operate within the current `room_id`.
 - **Behavior:** set `status='verified'`, `helped = helped + 1`, touch `updated_at`.
 - **Out:** `{ id, status, helped }`.
 
+### `update_solution(id, problem?, solution?, context?, tags?)`
+- **In:** `id: number` + any fields to change
+- **Behavior:** fix/improve a card **in place** (instead of recording a near-duplicate).
+- **Out:** the updated card.
+
+### `delete_solution(id)`
+- **In:** `id: number`
+- **Behavior:** permanently remove a wrong/obsolete/duplicate card. Irreversible.
+- **Out:** `{ ok }`.
+
 ### `get_context()`
 - **In:** none
 - **Behavior:** read all `context_sections` for the room, assembled in canonical order.
@@ -149,16 +159,27 @@ that nobody has confirmed.
 
 ---
 
-## Continuity (v2 design)
+## Continuity (shipped — bundled in the plugin)
 
-- **`SessionStart` hook** runs a small command that reads the room's context + a few recent
-  solutions and emits them as `additionalContext` → the agent starts oriented.
-- **`Stop` / `PreCompact` hook** asks for / writes a short "what changed this session" digest
-  into the `status` section (and optionally a lightweight progress entry).
-- Both are installed by the `spark` skill. They call the same store the MCP server uses.
+All hooks live in `hooks/hooks.json` (referenced from `plugin.json`) and run the CLI with
+`--from-hook` — silent in projects without a `SPARK_ROOM`, silent on any backend failure,
+and they fall back to the plugin-bundled Supabase creds (hooks don't inherit the MCP server's
+env block):
 
-Keeping these as hooks (not core MCP) means v1 stays simple and the automation is a clean,
-optional layer.
+- **`SessionStart`** (`spark orient`) reads the room's context + recent solutions and prints
+  them to stdout → injected into the agent's context. The agent starts oriented.
+- **`SessionEnd` / `PreCompact`** (`spark summarize-hook`) prepends a timestamped digest line
+  to the `status` section. Digest lines are matched by their timestamp stamp, so hand-written
+  notes (including markdown checkboxes) are preserved below the capped digest block.
+- **`PostToolUseFailure`** (matcher `Bash`, `spark posttooluse-hook`) — when a command fails,
+  the hook searches the room for the error text and injects matching cards via
+  `hookSpecificOutput.additionalContext`. Silent on no match; already-injected cards are not
+  repeated within a session. Note: failures arrive as a string `error` field
+  ("Exit code N\n<output>") — successes are a different event (`PostToolUse`) and never reach
+  this hook.
+
+Keeping these as hooks (not core MCP) means the core stays simple and the automation is a
+clean layer that installing the plugin activates.
 
 ---
 
